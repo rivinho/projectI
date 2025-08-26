@@ -13,7 +13,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #111111;
+            background: #0f0f0f;
             color: #ffffff;
             min-height: 100vh;
             overflow-x: hidden;
@@ -26,10 +26,15 @@
             width: 100%;
             height: 100%;
             background: 
-                radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.04) 0%, transparent 50%);
+                radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
             z-index: -1;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0px, 0px); }
+            50% { transform: translate(-20px, -10px); }
         }
 
         .container {
@@ -41,6 +46,12 @@
         .header {
             text-align: center;
             margin-bottom: 50px;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .header h1 {
@@ -49,15 +60,12 @@
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #3b82f6 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
             margin-bottom: 12px;
-            letter-spacing: -0.02em;
         }
 
         .header p {
             font-size: 1.1rem;
             opacity: 0.8;
-            font-weight: 400;
             color: #a1a1aa;
         }
 
@@ -65,13 +73,12 @@
             display: flex;
             justify-content: center;
             gap: 4px;
-            margin-bottom: 40px;
+            margin: 0 auto 40px;
             background: rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(20px);
             border-radius: 16px;
             padding: 8px;
             max-width: 500px;
-            margin: 0 auto 40px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -103,6 +110,12 @@
 
         .tab-content.active {
             display: block;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .search-container {
@@ -157,7 +170,7 @@
 
         .upload-zone {
             max-width: 500px;
-            margin: 0 auto 50px;
+            margin: 0 auto 30px;
             padding: 32px;
             border: 2px dashed rgba(255, 255, 255, 0.2);
             border-radius: 16px;
@@ -183,14 +196,28 @@
             opacity: 0.7;
         }
 
-        .results-section {
+        .analyze-docs-btn {
             display: none;
-            animation: fadeInUp 0.6s ease;
+            max-width: 300px;
+            margin: 20px auto;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
 
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+        .analyze-docs-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(52, 211, 153, 0.4);
+        }
+
+        .results-section {
+            display: none;
+            animation: fadeInUp 0.8s ease-out;
         }
 
         .company-card {
@@ -218,7 +245,6 @@
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
 
         .company-ticker {
@@ -236,6 +262,9 @@
             font-weight: 600;
             margin-bottom: 20px;
             color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .metrics-grid {
@@ -298,6 +327,16 @@
             font-size: 1rem;
         }
 
+        .risk-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
         .risk-low {
             background: rgba(34, 197, 94, 0.2);
             color: #4ade80;
@@ -316,14 +355,21 @@
             border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
-        .risk-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 12px;
+        .deal-score {
+            text-align: center;
+            padding: 28px;
+            background: rgba(255, 255, 255, 0.02);
             border-radius: 16px;
-            font-weight: 600;
-            font-size: 0.8rem;
+            margin: 24px 0;
+        }
+
+        .deal-score-number {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
         }
 
         .loading {
@@ -355,6 +401,15 @@
             padding: 25px;
             margin: 20px 0;
             color: #f87171;
+        }
+
+        .warning-card {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 16px;
+            padding: 25px;
+            margin: 20px 0;
+            color: #fbbf24;
         }
 
         .disclaimer {
@@ -390,6 +445,24 @@
             color: #6366f1;
         }
 
+        .pipeline-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.12);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pipeline-item:hover {
+            background: rgba(99,102,241,0.1);
+            transform: translateX(5px);
+        }
+
         @media (max-width: 768px) {
             .search-container {
                 flex-direction: column;
@@ -414,7 +487,7 @@
     <div class="container">
         <div class="header">
             <h1>Company Research</h1>
-            <p>Investment analysis and due diligence platform</p>
+            <p>AI-powered investment analysis and due diligence platform</p>
         </div>
 
         <div class="nav-tabs">
@@ -423,19 +496,16 @@
             <button class="nav-tab" onclick="switchTab('industry')">🏭 Industries</button>
         </div>
 
-        <!-- Research Tab -->
         <div id="research-tab" class="tab-content active">
             <div class="search-container">
                 <input 
                     type="text" 
                     id="companySearch" 
                     class="search-input" 
-                    placeholder="Enter any company name or symbol..."
+                    placeholder="Enter any company name (e.g., Apple, Stripe, OpenAI...)"
                     autocomplete="off"
                 >
-                <button onclick="searchCompany()" class="search-btn">
-                    Analyze
-                </button>
+                <button onclick="searchCompany()" class="search-btn">Analyze</button>
             </div>
 
             <div class="upload-zone" onclick="document.getElementById('fileUpload').click()">
@@ -449,16 +519,19 @@
                 <input type="file" id="fileUpload" class="upload-input" accept=".pdf,.doc,.docx,.txt" multiple>
             </div>
 
+            <button id="analyzeDocsBtn" class="analyze-docs-btn" onclick="analyzeDocumentOnly()" style="display: none;">
+                🤖 Analyze Documents with AI
+            </button>
+
             <div id="results" class="results-section">
                 <div id="loading" class="loading" style="display: none;">
                     <div class="loading-spinner"></div>
-                    Analyzing company data...
+                    <p>Analyzing with AI...</p>
                 </div>
                 <div id="content"></div>
             </div>
         </div>
 
-        <!-- Pipeline Tab -->
         <div id="pipeline-tab" class="tab-content">
             <div class="company-card">
                 <h2 class="section-title">📊 Deal Pipeline</h2>
@@ -471,7 +544,6 @@
             </div>
         </div>
 
-        <!-- Industry Comparison Tab -->
         <div id="industry-tab" class="tab-content">
             <div class="company-card">
                 <h2 class="section-title">🏭 Industry Analysis</h2>
@@ -488,346 +560,14 @@
             <h3>⚠️ Investment Disclaimer</h3>
             <p>
                 Information provided for analysis purposes only. Not investment advice. 
-                Consult qualified advisors before making decisions. No liability assumed.
+                Consult qualified advisors before making investment decisions. No liability assumed.
             </p>
         </div>
     </div>
 
-    <script>
-        const ALPHA_VANTAGE_API_KEY = 'YXCFY2BGHI1QUIOS';
-        const GEMINI_API_KEY = 'AIzaSyBgSU2MlIkqyNmimexiPc2faQNhRGwWnYE';
-
-        let uploadedFiles = [];
-        let dealPipeline = JSON.parse(localStorage.getItem('dealPipeline') || '[]');
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-            
-            document.getElementById(tabName + '-tab').classList.add('active');
-            event.target.classList.add('active');
-            
-            if (tabName === 'pipeline') {
-                loadPipeline();
-            } else if (tabName === 'industry') {
-                loadIndustryComparison();
-            }
-        }
-
-        function loadPipeline() {
-            const pipelineContent = document.getElementById('pipeline-content');
-            
-            if (dealPipeline.length === 0) {
-                pipelineContent.innerHTML = `
-                    <div class="empty-state">
-                        <h3>No companies analyzed yet</h3>
-                        <p>Companies you research will automatically appear here for tracking</p>
-                    </div>
-                `;
-                return;
-            }
-
-            const pipelineHTML = dealPipeline.map(company => `
-                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.08); border-radius: 14px; padding: 20px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.12); cursor: pointer; transition: all 0.3s ease;" 
-                     onclick="loadCompanyFromPipeline('${company.symbol}')"
-                     onmouseover="this.style.background='rgba(99,102,241,0.1)'"
-                     onmouseout="this.style.background='rgba(255,255,255,0.08)'">
-                    <div>
-                        <div style="font-weight: 600; color: #ffffff; font-size: 1.1rem;">${company.name} (${company.symbol})</div>
-                        <div style="font-size: 0.9rem; opacity: 0.7; margin-top: 4px;">Analyzed: ${company.date}</div>
-                    </div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: #6366f1;">${company.dealScore}/100</div>
-                </div>
-            `).join('');
-
-            pipelineContent.innerHTML = pipelineHTML;
-        }
-
-        function loadIndustryComparison() {
-            const industryContent = document.getElementById('industry-content');
-            
-            if (dealPipeline.length < 2) {
-                industryContent.innerHTML = `
-                    <div class="empty-state">
-                        <h3>Need multiple companies for comparison</h3>
-                        <p>Analyze companies in the same industry to see comparative insights</p>
-                    </div>
-                `;
-                return;
-            }
-
-            const industries = {};
-            dealPipeline.forEach(company => {
-                const industry = company.industry || 'Technology';
-                if (!industries[industry]) industries[industry] = [];
-                industries[industry].push(company);
-            });
-
-            const comparisonHTML = Object.keys(industries).map(industry => `
-                <div class="analysis-card">
-                    <div class="analysis-title">${industry} Sector</div>
-                    <div class="metrics-grid">
-                        <div class="metric-card">
-                            <div class="metric-label">Companies Analyzed</div>
-                            <div class="metric-value">${industries[industry].length}</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-label">Avg Score</div>
-                            <div class="metric-value">${Math.round(industries[industry].reduce((sum, c) => sum + c.dealScore, 0) / industries[industry].length)}/100</div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-
-            industryContent.innerHTML = `<div class="analysis-grid">${comparisonHTML}</div>`;
-        }
-
-        async function searchCompany() {
-            const searchTerm = document.getElementById('companySearch').value.trim();
-            
-            if (!searchTerm) {
-                alert('Please enter a company name');
-                return;
-            }
-
-            const resultsSection = document.getElementById('results');
-            const loading = document.getElementById('loading');
-            const content = document.getElementById('content');
-
-            resultsSection.style.display = 'block';
-            loading.style.display = 'block';
-            content.innerHTML = '';
-
-            try {
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
-                const mockCompanies = {
-                    'apple': { name: 'Apple Inc.', symbol: 'AAPL', price: 178.18, change: 2.34, changePercent: 1.33 },
-                    'tesla': { name: 'Tesla, Inc.', symbol: 'TSLA', price: 238.45, change: -5.67, changePercent: -2.32 },
-                    'microsoft': { name: 'Microsoft Corporation', symbol: 'MSFT', price: 378.85, change: 4.12, changePercent: 1.10 }
-                };
-
-                const key = searchTerm.toLowerCase();
-                const company = mockCompanies[key] || { 
-                    name: searchTerm, 
-                    symbol: 'DEMO', 
-                    price: 'N/A', 
-                    change: 0, 
-                    changePercent: 0,
-                    isDemo: true 
-                };
-
-                loading.style.display = 'none';
-                displayCompanyData(company);
-                addToPipeline(company);
-                
-            } catch (error) {
-                loading.style.display = 'none';
-                displayError(error.message);
-            }
-        }
-
-        function displayCompanyData(data) {
-            const content = document.getElementById('content');
-            
-            const stockDisplay = !data.isDemo ? `
-                <div style="margin-top: 10px; font-size: 2rem; font-weight: 600;">
-                    $${data.price}
-                    <span style="font-size: 1rem; margin-left: 15px; color: ${data.change > 0 ? '#4ade80' : '#f87171'};">
-                        ${data.change > 0 ? '📈' : '📉'} ${data.change > 0 ? '+' : ''}${data.change} (${data.changePercent > 0 ? '+' : ''}${data.changePercent}%)
-                    </span>
-                </div>` : '<div style="margin-top: 10px; font-size: 1.5rem; opacity: 0.7;">Demo Company Analysis</div>';
-
-            const financialMetrics = !data.isDemo ? `
-                <div style="margin-bottom: 32px;">
-                    <h3 class="section-title">📊 Financial Metrics</h3>
-                    <div class="metrics-grid">
-                        <div class="metric-card">
-                            <div class="metric-label">Revenue (TTM)</div>
-                            <div class="metric-value">$394.33B</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-label">EBITDA</div>
-                            <div class="metric-value">$123.15B</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-label">EBITDA Margin</div>
-                            <div class="metric-value">31.2%</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-label">Gross Profit</div>
-                            <div class="metric-value">$169.15B</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-label">Gross Margin</div>
-                            <div class="metric-value">42.9%</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-label">P/E Ratio</div>
-                            <div class="metric-value">28.1</div>
-                        </div>
-                    </div>
-                </div>` : '';
-
-            content.innerHTML = `
-                <div class="company-card">
-                    <div class="company-header">
-                        <div>
-                            <div class="company-name">${data.name}</div>
-                            ${stockDisplay}
-                        </div>
-                        <div class="company-ticker">${data.symbol}</div>
-                    </div>
-
-                    ${financialMetrics}
-
-                    <div style="background: rgba(255, 255, 255, 0.04); border-radius: 16px; padding: 28px; margin: 28px 0; border: 1px solid rgba(255, 255, 255, 0.1);">
-                        <h3 class="section-title">🎯 Pre-LOI Investment Analysis</h3>
-                        
-                        <div style="text-align: center; padding: 28px; background: rgba(255, 255, 255, 0.02); border-radius: 16px; margin: 24px 0;">
-                            <div style="font-size: 3.5rem; font-weight: 700; color: #6366f1; margin-bottom: 8px;">85</div>
-                            <div style="opacity: 0.7; font-size: 0.95rem;">Investment Score out of 100</div>
-                        </div>
-
-                        <div class="analysis-grid">
-                            <div class="analysis-card">
-                                <div class="analysis-title">💰 Cash Flow Analysis</div>
-                                <div style="margin: 12px 0;">
-                                    <span class="risk-indicator risk-low">✅ LOW RISK</span>
-                                </div>
-                                <p style="opacity: 0.8; font-size: 0.9rem; line-height: 1.5;">
-                                    ${data.isDemo ? 'Strong profitability indicators with consistent cash generation. EBITDA margins above industry average.' : 'Strong cash flow generation with healthy margins and consistent profitability trends.'}
-                                </p>
-                            </div>
-
-                            <div class="analysis-card">
-                                <div class="analysis-title">👥 Customer Concentration</div>
-                                <div style="margin: 12px 0;">
-                                    <span class="risk-indicator risk-medium">⚠️ MEDIUM RISK</span>
-                                </div>
-                                <p style="opacity: 0.8; font-size: 0.9rem; line-height: 1.5;">
-                                    ${data.isDemo ? 'Diversified customer base with no single customer representing >15% of revenue. Geographic spread reduces concentration risk.' : 'Moderate customer concentration with room for diversification improvements.'}
-                                </p>
-                            </div>
-
-                            <div class="analysis-card">
-                                <div class="analysis-title">🔄 Revenue Model</div>
-                                <div style="margin: 12px 0;">
-                                    <span class="risk-indicator risk-low">✅ LOW RISK</span>
-                                </div>
-                                <p style="opacity: 0.8; font-size: 0.9rem; line-height: 1.5;">
-                                    ${data.isDemo ? 'Strong recurring revenue component with subscription-based elements. High customer lifetime value and low churn rates.' : 'Solid recurring revenue foundation with predictable cash flows.'}
-                                </p>
-                            </div>
-
-                            <div class="analysis-card">
-                                <div class="analysis-title">🛒 Consumability</div>
-                                <div style="margin: 12px 0;">
-                                    <span class="risk-indicator risk-low">✅ LOW RISK</span>
-                                </div>
-                                <p style="opacity: 0.8; font-size: 0.9rem; line-height: 1.5;">
-                                    ${data.isDemo ? 'High purchase frequency with strong customer loyalty. Products are essential to customer operations driving repeat purchases.' : 'Regular purchase patterns with high customer retention and engagement.'}
-                                </p>
-                            </div>
-
-                            <div class="analysis-card">
-                                <div class="analysis-title">📊 Seasonality</div>
-                                <div style="margin: 12px 0;">
-                                    <span class="risk-indicator risk-medium">⚠️ MEDIUM RISK</span>
-                                </div>
-                                <p style="opacity: 0.8; font-size: 0.9rem; line-height: 1.5;">
-                                    ${data.isDemo ? 'Some seasonal variations in Q4 but generally stable throughout the year. Strong demand during holiday periods.' : 'Moderate seasonal patterns that are manageable and predictable.'}
-                                </p>
-                            </div>
-
-                            <div class="analysis-card">
-                                <div class="analysis-title">🛡️ Recession Resistance</div>
-                                <div style="margin: 12px 0;">
-                                    <span class="risk-indicator risk-low">✅ LOW RISK</span>
-                                </div>
-                                <p style="opacity: 0.8; font-size: 0.9rem; line-height: 1.5;">
-                                    ${data.isDemo ? 'Business model shows strong resilience during economic downturns. Essential products maintain demand regardless of economic conditions.' : 'Strong defensive characteristics with resilient demand patterns.'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function addToPipeline(companyData) {
-            const pipelineItem = {
-                name: companyData.name,
-                symbol: companyData.symbol,
-                dealScore: 85,
-                date: new Date().toLocaleDateString(),
-                industry: 'Technology'
-            };
-
-            const existingIndex = dealPipeline.findIndex(c => c.symbol === companyData.symbol);
-            if (existingIndex >= 0) {
-                dealPipeline[existingIndex] = pipelineItem;
-            } else {
-                dealPipeline.push(pipelineItem);
-            }
-
-            localStorage.setItem('dealPipeline', JSON.stringify(dealPipeline));
-        }
-
-        function displayError(message) {
-            const content = document.getElementById('content');
-            content.innerHTML = `
-                <div class="error-card">
-                    <h3>⚠️ Search Error</h3>
-                    <p>${message}</p>
-                    <p style="margin-top: 15px; opacity: 0.8;">
-                        Try searching for: Apple, Tesla, Microsoft, or any company name
-                    </p>
-                </div>
-            `;
-        }
-
-        function loadCompanyFromPipeline(symbol) {
-            document.getElementById('companySearch').value = symbol;
-            switchTab('research');
-            searchCompany();
-        }
-
-        // File upload handling
-        document.getElementById('fileUpload').addEventListener('change', function(e) {
-            const files = Array.from(e.target.files);
-            if (files.length > 2) {
-                alert('Maximum 2 files allowed');
-                return;
-            }
-            uploadedFiles = files;
-            
-            if (uploadedFiles.length > 0) {
-                document.querySelector('.upload-content').innerHTML = `
-                    <div class="upload-icon">✅</div>
-                    <h3>${uploadedFiles.length} Document${uploadedFiles.length > 1 ? 's' : ''} Ready</h3>
-                    <p style="opacity: 0.7; margin-top: 10px;">
-                        ${uploadedFiles.map(f => f.name).join(', ')}
-                    </p>
-                `;
-                document.querySelector('.upload-zone').style.borderColor = 'rgba(99, 102, 241, 0.5)';
-                document.querySelector('.upload-zone').style.background = 'rgba(99, 102, 241, 0.1)';
-            }
-        });
-
-        // Enter key search
-        document.getElementById('companySearch').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchCompany();
-            }
-        });
-
-        // Click outside to close any dropdowns
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.search-container')) {
-                // Hide any search suggestions if implemented later
-            }
-        });
-    </script>
+    <!-- Load JavaScript files -->
+    <script src="config.js"></script>
+    <script src="main.js"></script>
+    <script src="analysis.js"></script>
 </body>
 </html>
