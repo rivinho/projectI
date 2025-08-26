@@ -590,8 +590,12 @@
 
         // Helper function to check if API keys are configured
         function areAPIKeysConfigured() {
-            const alphaVantageConfigured = ALPHA_VANTAGE_API_KEY !== 'YOUR_ALPHA_VANTAGE_KEY_HERE';
-            const geminiConfigured = GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE';
+            const alphaVantageConfigured = ALPHA_VANTAGE_API_KEY && 
+                ALPHA_VANTAGE_API_KEY !== 'YOUR_ALPHA_VANTAGE_KEY_HERE' && 
+                ALPHA_VANTAGE_API_KEY.length > 10;
+            const geminiConfigured = GEMINI_API_KEY && 
+                GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE' && 
+                GEMINI_API_KEY.length > 10;
             
             return {
                 alphaVantage: alphaVantageConfigured,
@@ -612,7 +616,177 @@
             else if (tabName === 'industry') loadIndustryComparison();
         }
 
-        // Main search function test
+        // Get company information using AI
+        async function getCompanyInfoWithAI(query) {
+            const apiStatus = areAPIKeysConfigured();
+            if (!apiStatus.gemini) {
+                throw new Error('Please add your Gemini API key to enable AI analysis');
+            }
+
+            const prompt = `Find detailed information about the company "${query}". Provide a JSON response with:
+            {
+                "name": "Full company name",
+                "symbol": "Stock symbol if public, otherwise null",
+                "overview": "2-3 sentence business description",
+                "history": "2-3 sentence founding and key milestones",
+                "products": "Key products and services description",
+                "isPublic": true/false,
+                "industry": "Primary industry"
+            }`;
+
+            try {
+                const response = await fetch(`${GEMINI_BASE_URL}?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            temperature: 0.3,
+                            topK: 40,
+                            topP: 0.8,
+                            maxOutputTokens: 1000,
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(`Gemini API Error: ${data.error.message}`);
+                }
+                
+                const aiResponse = data.candidates[0].content.parts[0].text;
+                const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+                
+                if (jsonMatch) {
+                    const result = JSON.parse(jsonMatch[0]);
+                    if (DEBUG_MODE) console.log('AI company info retrieved:', result.name);
+                    return result;
+                } else {
+                    throw new Error('Could not parse AI response as JSON');
+                }
+            } catch (error) {
+                console.error('AI company search failed:', error);
+                
+                return {
+                    name: query,
+                    symbol: null,
+                    overview: `Information for "${query}" could not be retrieved via AI. ${error.message}`,
+                    history: "Historical information not available due to API error.",
+                    products: "Product information not available due to API error.",
+                    isPublic: false,
+                    industry: "Unknown",
+                    error: error.message
+                };
+            }
+        }
+
+        // AI document analysis
+        async function analyzeDocumentWithAI(documentText, companyData = null) {
+            const apiStatus = areAPIKeysConfigured();
+            if (!apiStatus.gemini) {
+                throw new Error('Gemini API key not configured for document analysis');
+            }
+
+            const basePrompt = `You are a financial analyst. Analyze the following document and provide insights focusing on:
+
+            1. Cash Flow Analysis - Profitability indicators and financial health
+            2. Customer Concentration - Key customer dependencies and risks
+            3. Revenue Model - Recurring vs one-time revenue patterns
+            4. Consumability - Purchase frequency and customer behavior
+            5. Seasonality - Quarterly variations and timing
+            6. Recession Resistance - Economic sensitivity
+
+            Document Content:
+            ${documentText.substring(0, MAX_DOCUMENT_LENGTH)}
+
+            Provide specific, actionable insights in a structured format.`;
+
+            const companyPrompt = companyData ? 
+                `Company: ${companyData.name} (${companyData.symbol || 'Private'})
+                Context: ${companyData.overview}
+                
+                ${basePrompt}` : basePrompt;
+
+            try {
+                const response = await fetch(`${GEMINI_BASE_URL}?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: companyPrompt }] }],
+                        generationConfig: {
+                            temperature: 0.7,
+                            topK: 40,
+                            topP: 0.8,
+                            maxOutputTokens: 1500,
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Gemini API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(`Gemini API Error: ${data.error.message}`);
+                }
+
+                const analysis = data.candidates[0].content.parts[0].text;
+                if (DEBUG_MODE) console.log('Document analysis completed');
+                return analysis;
+                
+            } catch (error) {
+                console.error('Document analysis failed:', error);
+                throw error;
+            }
+        }
+
+        // Process uploaded files for analysis
+        async function processUploadedFiles() {
+            if (uploadedFiles.length === 0) return null;
+
+            let combinedText = '';
+            
+            for (const file of uploadedFiles) {
+                try {
+                    const text = await extractTextFromFile(file);
+                    combinedText += `\n\n--- ${file.name} ---\n${text}`;
+                } catch (error) {
+                    console.error(`Error processing ${file.name}:`, error);
+                    combinedText += `\n\n--- ${file.name} ---\nError: Could not extract text from this file.`;
+                }
+            }
+
+            if (DEBUG_MODE) console.log('Processed', uploadedFiles.length, 'files');
+            return combinedText;
+        }
+
+        // Extract text from files
+        async function extractTextFromFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    resolve(event.target.result);
+                };
+                
+                reader.onerror = function(error) {
+                    reject(error);
+                };
+
+                if (file.type === 'application/pdf') {
+                    resolve(`[PDF FILE: ${file.name}]\n\nNote: PDF text extraction requires additional setup. In production, this would extract the full PDF content using PDF.js library.\n\nTo enable PDF parsing:\n1. Include PDF.js library\n2. Parse PDF content\n3. Extract text for AI analysis`);
+                } else if (file.type.includes('text') || file.name.endsWith('.txt')) {
+                    reader.readAsText(file);
+                } else {
+                    resolve(`[${file.type.toUpperCase()} FILE: ${file.name}]\n\nNote: This file type requires specific parsing. In production, this would be processed according to its format.`);
+                }
+            });
+        }
         async function searchCompany() {
             const searchTerm = document.getElementById('companySearch').value.trim();
             
@@ -763,10 +937,16 @@
             `;
         }
 
-        // Document analysis placeholder
+        // Document analysis with real AI
         async function analyzeDocumentOnly() {
             if (uploadedFiles.length === 0) {
                 alert('Please upload documents first');
+                return;
+            }
+
+            const apiStatus = areAPIKeysConfigured();
+            if (!apiStatus.gemini) {
+                alert('Please add your Gemini API key to enable document analysis');
                 return;
             }
 
@@ -778,25 +958,117 @@
             loading.style.display = 'block';
             content.innerHTML = '';
 
-            setTimeout(() => {
+            try {
+                const documentText = await processUploadedFiles();
+                const analysis = await analyzeDocumentWithAI(documentText);
+                
                 loading.style.display = 'none';
-                content.innerHTML = `
-                    <div class="company-card">
-                        <div class="company-header">
-                            <div>
-                                <div class="company-name">Document Analysis</div>
-                                <div style="margin-top: 10px; font-size: 1.5rem; opacity: 0.7;">Demo Mode</div>
-                            </div>
-                            <div class="company-ticker">DOCS</div>
-                        </div>
+                displayDocumentAnalysis(analysis);
+                
+            } catch (error) {
+                loading.style.display = 'none';
+                displayError(`Document analysis failed: ${error.message}`);
+            }
+        }
 
-                        <div class="warning-card">
-                            <h3>⚠️ Demo Mode</h3>
-                            <p>Add your Gemini API key to enable real document analysis</p>
+        // Display document analysis results
+        function displayDocumentAnalysis(analysis) {
+            const content = document.getElementById('content');
+            
+            content.innerHTML = `
+                <div class="company-card">
+                    <div class="company-header">
+                        <div>
+                            <div class="company-name">Document Analysis</div>
+                            <div style="margin-top: 10px; font-size: 1.5rem; opacity: 0.7;">AI-Powered Investment Analysis</div>
+                        </div>
+                        <div class="company-ticker">DOCS</div>
+                    </div>
+
+                    <div style="background: rgba(34, 197, 94, 0.1); border-radius: 16px; padding: 30px; margin: 30px 0; border: 1px solid rgba(34, 197, 94, 0.3);">
+                        <h3 style="color: #4ade80; margin-bottom: 20px;">AI Document Analysis Results</h3>
+                        <div style="color: #bbf7d0;">
+                            <p style="margin-bottom: 20px;"><strong>Documents Analyzed:</strong> ${uploadedFiles.map(f => f.name).join(', ')}</p>
+                            <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 24px; margin-top: 20px;">
+                                <h4 style="margin-bottom: 15px; color: #4ade80;">Analysis Results:</h4>
+                                <div style="white-space: pre-wrap; line-height: 1.7; font-size: 0.95rem; color: #d1fae5;">
+                                    ${analysis}
+                                </div>
+                            </div>
+                            <p style="margin-top: 20px; font-size: 0.8rem; opacity: 0.7; text-align: center;">
+                                Powered by Google Gemini AI
+                            </p>
                         </div>
                     </div>
-                `;
-            }, 2000);
+
+                    <div style="background: rgba(99, 102, 241, 0.1); border-radius: 16px; padding: 24px; margin: 24px 0; border: 1px solid rgba(99, 102, 241, 0.3);">
+                        <h3 style="color: #a5b4fc; margin-bottom: 15px;">Next Steps</h3>
+                        <p style="color: #c7d2fe; opacity: 0.9; line-height: 1.6;">
+                            For more comprehensive analysis, try searching for the company name to combine this document analysis 
+                            with real-time financial data and market information.
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Alpha Vantage API integration
+        async function fetchFinancialData(symbol) {
+            const apiStatus = areAPIKeysConfigured();
+            if (!apiStatus.alphaVantage) {
+                throw new Error('Alpha Vantage API key not configured');
+            }
+
+            try {
+                const [overviewResponse, quoteResponse] = await Promise.all([
+                    fetch(`${ALPHA_VANTAGE_BASE_URL}?function=OVERVIEW&symbol=${symbol}&apikey=${ALPHA_VANTAGE_API_KEY}`),
+                    fetch(`${ALPHA_VANTAGE_BASE_URL}?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${ALPHA_VANTAGE_API_KEY}`)
+                ]);
+
+                const overview = await overviewResponse.json();
+                const quote = await quoteResponse.json();
+
+                if (overview['Error Message'] || overview['Note']) {
+                    throw new Error('API limit reached or invalid symbol');
+                }
+
+                const quoteData = quote['Global Quote'];
+                const formatNumber = (num) => {
+                    if (!num || num === 'None') return 'N/A';
+                    const value = parseFloat(num);
+                    if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
+                    if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+                    return value.toLocaleString();
+                };
+
+                const financialData = {
+                    price: parseFloat(quoteData['05. price']).toFixed(2),
+                    change: parseFloat(quoteData['09. change']).toFixed(2),
+                    changePercent: parseFloat(quoteData['10. change percent'].replace('%', '')).toFixed(2),
+                    financials: {
+                        revenue: formatNumber(overview.RevenueTTM),
+                        ebitda: formatNumber(overview.EBITDA),
+                        ebitdaMargin: overview.ProfitMargin ? `${(parseFloat(overview.ProfitMargin) * 100).toFixed(1)}%` : 'N/A',
+                        grossProfit: formatNumber(overview.GrossProfitTTM),
+                        grossMargin: overview.GrossProfitTTM && overview.RevenueTTM ? 
+                            `${((parseFloat(overview.GrossProfitTTM) / parseFloat(overview.RevenueTTM)) * 100).toFixed(1)}%` : 'N/A'
+                    },
+                    stockInfo: {
+                        high52Week: parseFloat(overview['52WeekHigh']).toFixed(2),
+                        low52Week: parseFloat(overview['52WeekLow']).toFixed(2),
+                        avgVolume: formatNumber(overview.SharesOutstanding),
+                        marketCap: formatNumber(overview.MarketCapitalization),
+                        peRatio: parseFloat(overview.PERatio).toFixed(1)
+                    }
+                };
+
+                if (DEBUG_MODE) console.log('Fetched financial data for', symbol);
+                return financialData;
+                
+            } catch (error) {
+                console.error('Financial data fetch failed:', error);
+                throw error;
+            }
         }
 
         // Pipeline management
