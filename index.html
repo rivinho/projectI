@@ -487,7 +487,7 @@
     <div class="container">
         <div class="header">
             <h1>Company Research</h1>
-            <p>AI-powered investment analysis and due diligence platform</p>
+            <p>AI-powered investment analysis</p>
         </div>
 
         <div class="nav-tabs">
@@ -702,23 +702,48 @@
                 throw new Error('Gemini API key not configured for document analysis - look for "INPUT_YOUR_GEMINI_API_KEY_HERE" in the code');
             }
 
-            const basePrompt = `You are a financial analyst. Analyze the following document and provide insights focusing on:
+            const basePrompt = `Analyze this financial document and provide a structured investment analysis report. Format your response as clean, professional bullet points under each category. Do not include conversational text, disclaimers, or meta-commentary about the analysis process.
 
-            1. Cash Flow Analysis - Profitability indicators and financial health
-            2. Customer Concentration - Key customer dependencies and risks
-            3. Revenue Model - Recurring vs one-time revenue patterns
-            4. Consumability - Purchase frequency and customer behavior
-            5. Seasonality - Quarterly variations and timing
-            6. Recession Resistance - Economic sensitivity
+DOCUMENT CONTENT:
+${documentText.substring(0, MAX_DOCUMENT_LENGTH)}
 
-            Document Content:
-            ${documentText.substring(0, MAX_DOCUMENT_LENGTH)}
+Provide analysis in this exact format:
 
-            Provide specific, actionable insights in a structured format with clear headings.`;
+CASH FLOW ANALYSIS
+• [Key finding 1]
+• [Key finding 2]
+• [Key finding 3]
+
+CUSTOMER CONCENTRATION
+• [Key finding 1]
+• [Key finding 2]
+• [Key finding 3]
+
+REVENUE MODEL
+• [Key finding 1]
+• [Key finding 2]
+• [Key finding 3]
+
+MARKET POSITION
+• [Key finding 1]
+• [Key finding 2]
+• [Key finding 3]
+
+RISK ASSESSMENT
+• [Key finding 1]
+• [Key finding 2]
+• [Key finding 3]
+
+INVESTMENT HIGHLIGHTS
+• [Key finding 1]
+• [Key finding 2]
+• [Key finding 3]
+
+Only include factual findings from the document. No speculation or general advice.`;
 
             const companyPrompt = companyData ? 
-                `Company Context: ${companyData.name} (${companyData.symbol || 'Private'})
-                Business Overview: ${companyData.overview}
+                `COMPANY: ${companyData.name} (${companyData.symbol || 'Private'})
+                BUSINESS: ${companyData.overview}
                 
                 ${basePrompt}` : basePrompt;
 
@@ -729,9 +754,9 @@
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: companyPrompt }] }],
                         generationConfig: {
-                            temperature: 0.7,
-                            topK: 40,
-                            topP: 0.8,
+                            temperature: 0.3,
+                            topK: 30,
+                            topP: 0.7,
                             maxOutputTokens: 2000,
                         }
                     })
@@ -751,7 +776,13 @@
                     throw new Error('No response from Gemini API');
                 }
 
-                const analysis = data.candidates[0].content.parts[0].text;
+                let analysis = data.candidates[0].content.parts[0].text;
+                
+                // Clean up the response - remove any conversational elements
+                analysis = analysis.replace(/^(I'll analyze|Let me analyze|Here's|Based on|Analysis:|Analysis Results:)/i, '');
+                analysis = analysis.replace(/\*\*(.*?)\*\*/g, '$1'); // Remove markdown bold
+                analysis = analysis.trim();
+                
                 if (DEBUG_MODE) console.log('Document analysis completed');
                 return analysis;
                 
@@ -1242,20 +1273,32 @@
                 const documentText = await processUploadedFiles();
                 const analysis = await analyzeDocumentWithAI(documentText, companyData);
                 
+                // Format the analysis text professionally
+                const formatAnalysisInline = (text) => {
+                    return text.split('\n').map(line => {
+                        if (line.trim().match(/^[A-Z][A-Z\s]+$/)) {
+                            return `<div style="color: #4ade80; font-weight: 600; margin: 16px 0 8px 0; font-size: 1rem; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 4px;">${line.trim()}</div>`;
+                        }
+                        return line.trim() ? `<div style="margin-bottom: 6px; color: #d1fae5;">${line.trim().replace(/^[•·\-\*]\s*/, '• ')}</div>` : '';
+                    }).join('');
+                };
+                
                 return `
                     <div style="background: rgba(34, 197, 94, 0.1); border-radius: 16px; padding: 30px; margin-top: 30px; border: 1px solid rgba(34, 197, 94, 0.3);">
-                        <h3 style="color: #4ade80; margin-bottom: 20px;">AI Document Analysis</h3>
-                        <div style="color: #bbf7d0;">
-                            <p style="margin-bottom: 15px;"><strong>Documents Analyzed:</strong> ${uploadedFiles.map(f => f.name).join(', ')}</p>
-                            <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 20px; margin-top: 20px;">
-                                <h4 style="margin-bottom: 15px; color: #4ade80;">Key Insights:</h4>
-                                <div style="white-space: pre-wrap; line-height: 1.6; font-size: 0.9rem; color: #d1fae5;">
-                                    ${analysis}
-                                </div>
+                        <h3 style="color: #4ade80; margin-bottom: 20px; font-size: 1.2rem; font-weight: 600;">Document Analysis Report</h3>
+                        <div style="margin-bottom: 20px;">
+                            <div style="background: rgba(0,0,0,0.15); border-radius: 8px; padding: 12px;">
+                                <span style="color: #86efac; font-weight: 600; font-size: 0.85rem;">DOCUMENTS:</span>
+                                <span style="color: #bbf7d0; margin-left: 8px; font-size: 0.9rem;">${uploadedFiles.map(f => f.name).join(', ')}</span>
                             </div>
-                            <p style="margin-top: 15px; font-size: 0.8rem; opacity: 0.7; text-align: center;">
-                                Powered by Google Gemini AI
-                            </p>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 24px; line-height: 1.5;">
+                            ${formatAnalysisInline(analysis)}
+                        </div>
+                        <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(74, 222, 128, 0.2);">
+                            <span style="font-size: 0.75rem; opacity: 0.7; color: #86efac;">
+                                Professional Analysis • Powered by Google Gemini AI
+                            </span>
                         </div>
                     </div>
                 `;
@@ -1308,37 +1351,90 @@
         function displayDocumentAnalysis(analysis) {
             const content = document.getElementById('content');
             
+            // Format the analysis text for better presentation
+            const formatAnalysis = (text) => {
+                // Split into sections and format professionally
+                const sections = text.split(/(?=^[A-Z][A-Z\s]+$)/gm);
+                let formattedHtml = '';
+                
+                sections.forEach(section => {
+                    const lines = section.trim().split('\n');
+                    if (lines.length === 0) return;
+                    
+                    const title = lines[0].trim();
+                    const content = lines.slice(1).filter(line => line.trim()).map(line => {
+                        // Clean up bullet points and format consistently
+                        let cleaned = line.trim().replace(/^[•·\-\*]\s*/, '');
+                        if (cleaned) {
+                            return `<div style="margin-bottom: 8px; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #6366f1; font-weight: bold;">•</span>
+                                ${cleaned}
+                            </div>`;
+                        }
+                        return '';
+                    }).join('');
+                    
+                    if (title && content) {
+                        formattedHtml += `
+                            <div style="margin-bottom: 28px;">
+                                <h4 style="color: #4ade80; font-size: 1.1rem; font-weight: 600; margin-bottom: 12px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 8px;">
+                                    ${title}
+                                </h4>
+                                <div style="color: #d1fae5; line-height: 1.6;">
+                                    ${content}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                return formattedHtml || `
+                    <div style="color: #d1fae5; line-height: 1.6;">
+                        ${text.split('\n').map(line => {
+                            if (line.trim().match(/^[A-Z][A-Z\s]+$/)) {
+                                return `<h4 style="color: #4ade80; font-size: 1.1rem; font-weight: 600; margin: 20px 0 12px 0;">${line.trim()}</h4>`;
+                            }
+                            return line.trim() ? `<div style="margin-bottom: 8px;">${line.trim().replace(/^[•·\-\*]\s*/, '• ')}</div>` : '';
+                        }).join('')}
+                    </div>
+                `;
+            };
+            
             content.innerHTML = `
                 <div class="company-card">
                     <div class="company-header">
                         <div>
                             <div class="company-name">Document Analysis</div>
-                            <div style="margin-top: 10px; font-size: 1.5rem; opacity: 0.7;">AI-Powered Investment Analysis</div>
+                            <div style="margin-top: 10px; font-size: 1.5rem; opacity: 0.7;">Professional Investment Analysis</div>
                         </div>
                         <div class="company-ticker">DOCS</div>
                     </div>
 
                     <div style="background: rgba(34, 197, 94, 0.1); border-radius: 16px; padding: 30px; margin: 30px 0; border: 1px solid rgba(34, 197, 94, 0.3);">
-                        <h3 style="color: #4ade80; margin-bottom: 20px;">AI Document Analysis Results</h3>
-                        <div style="color: #bbf7d0;">
-                            <p style="margin-bottom: 20px;"><strong>Documents Analyzed:</strong> ${uploadedFiles.map(f => f.name).join(', ')}</p>
-                            <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 24px; margin-top: 20px;">
-                                <h4 style="margin-bottom: 15px; color: #4ade80;">Analysis Results:</h4>
-                                <div style="white-space: pre-wrap; line-height: 1.7; font-size: 0.95rem; color: #d1fae5;">
-                                    ${analysis}
-                                </div>
+                        <h3 style="color: #4ade80; margin-bottom: 20px; font-size: 1.3rem; font-weight: 600;">Investment Analysis Report</h3>
+                        <div style="margin-bottom: 25px;">
+                            <div style="background: rgba(0,0,0,0.15); border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+                                <span style="color: #86efac; font-weight: 600; font-size: 0.9rem;">DOCUMENTS ANALYZED:</span>
+                                <span style="color: #bbf7d0; margin-left: 10px;">${uploadedFiles.map(f => f.name).join(', ')}</span>
                             </div>
-                            <p style="margin-top: 20px; font-size: 0.8rem; opacity: 0.7; text-align: center;">
-                                Powered by Google Gemini AI
-                            </p>
+                        </div>
+                        
+                        <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 28px;">
+                            ${formatAnalysis(analysis)}
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(74, 222, 128, 0.2);">
+                            <span style="font-size: 0.8rem; opacity: 0.7; color: #86efac;">
+                                Powered by Google Gemini AI • Professional Analysis Engine
+                            </span>
                         </div>
                     </div>
 
                     <div style="background: rgba(99, 102, 241, 0.1); border-radius: 16px; padding: 24px; margin: 24px 0; border: 1px solid rgba(99, 102, 241, 0.3);">
-                        <h3 style="color: #a5b4fc; margin-bottom: 15px;">Next Steps</h3>
+                        <h3 style="color: #a5b4fc; margin-bottom: 15px; font-size: 1.1rem;">Next Steps</h3>
                         <p style="color: #c7d2fe; opacity: 0.9; line-height: 1.6;">
-                            For more comprehensive analysis, try searching for the company name to combine this document analysis 
-                            with real-time financial data and market information.
+                            For comprehensive due diligence, combine this document analysis with company search to access 
+                            real-time financial data, market information, and comparative industry metrics.
                         </p>
                     </div>
                 </div>
